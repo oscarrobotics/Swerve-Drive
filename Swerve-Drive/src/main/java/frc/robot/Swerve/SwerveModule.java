@@ -1,5 +1,6 @@
 package frc.robot.Swerve;
 
+import com.ctre.phoenix.sensors.CANCoder;
 import com.revrobotics.AnalogInput;
 import com.revrobotics.CANEncoder;
 import com.revrobotics.CANSparkMax;
@@ -20,12 +21,12 @@ public class SwerveModule {
     private CANSparkMax m_steerMotor;
 
     private SparkMaxRelativeEncoder m_driveEncoder;
-    private SparkMaxRelativeEncoder m_turningEncoder;
+    private CANCoder m_turningEncoder; //Is it CTRE? No idea I'll add this in as filler anyways
 
     private SparkMaxPIDController turningPIDController;
 
-    //Assuming the absolute encoder is attached to the RIO--otherwise 
-    //it may just be the SparkMaxAbsoluteEncoder class if built in
+    /* (Assuming the absolute encoder is attached to the RIO--otherwise 
+    it may just be the SparkMaxAbsoluteEncoder class if built in) */
     private AnalogInput absoluteEncoder;
 
     /* Boolean conditions in case the positions are 
