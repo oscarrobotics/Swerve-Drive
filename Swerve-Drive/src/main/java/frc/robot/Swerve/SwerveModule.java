@@ -1,19 +1,22 @@
 package frc.robot.Swerve;
 
-import com.ctre.phoenix.sensors.CANCoder;
 import com.revrobotics.AnalogInput;
-import com.revrobotics.CANEncoder;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.SparkMaxAbsoluteEncoder;
+import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxRelativeEncoder;
 
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.RobotController;
 
 public class SwerveModule {
+
+    public final String moduleName;
     
     /* Motors/Encoders */
 
@@ -21,13 +24,10 @@ public class SwerveModule {
     private CANSparkMax m_steerMotor;
 
     private SparkMaxRelativeEncoder m_driveEncoder;
-    private CANCoder m_turningEncoder; //Is it CTRE? No idea I'll add this in as filler anyways
+    private SparkMaxAbsoluteEncoder m_steerEncoder;
 
-    private SparkMaxPIDController turningPIDController;
-
-    /* (Assuming the absolute encoder is attached to the RIO--otherwise 
-    it may just be the SparkMaxAbsoluteEncoder class if built in) */
-    private AnalogInput absoluteEncoder;
+    private SparkMaxPIDController m_drivePIDController;
+    private SparkMaxPIDController m_steerPIDController;
 
     /* Boolean conditions in case the positions are 
     reversed to how we want it when physically starting the bot */
@@ -38,19 +38,35 @@ public class SwerveModule {
 
     /* Constants (may move later) */
 
-    final double kGearRatio = 4.71; //4.71:1 ???
+    final double kGearRatio = 4.71; //4.71:1 presumably
     final int kWheelDiameterInches = 3;
+    final double kPhysicalMaxSpeedMetersPerSecond = 0.0;
 
+    //Constructor
+    //pass in constants
+    public SwerveModule(String moduleName, int driveCANId, int steerCANId, double angularOffset, boolean isReversed) {
+        this.moduleName = moduleName;
+        m_driveMotor = new CANSparkMax(driveCANId, MotorType.kBrushless);
+        m_steerMotor = new CANSparkMax(steerCANId, MotorType.kBrushless);
+
+        m_drivePIDController = m_driveMotor.getPIDController();
+        m_steerPIDController = m_steerMotor.getPIDController();
+        
+
+
+        angularOffset = m_steerEncoder.getZeroOffset();
+        //Important to know the motor's states before configuration; also useful for first 
+        //setting up the motors
+        m_driveMotor.restoreFactoryDefaults();
+        m_steerMotor.restoreFactoryDefaults();
+
+        resetEncoders();
+
+    }
     //Controller --> Chassispeeds --> Swerve Module State [x4]
 
     //get abs angle
 
-    //Set desired state
-    public void setDesiredState(SwerveModuleState desiredState, boolean isOpenLoop, boolean steerInPlace){
-
-
-
-    }
 
     //optimize turning
     public SwerveModuleState optimize(SwerveModuleState desiredState, Rotation2d currentAngle){
@@ -66,18 +82,18 @@ public class SwerveModule {
 
 
     //orient angle
-    public double orientTo2Pi(double scopeReference, double newAngle){
+    public double orientTo2Pi(double curAngle, double newAngle){
         double lowerBound;
         double upperBound;
-        double lowerOffset = scopeReference % 360;
+        double lowerOffset = curAngle % 360;
 
         //Whether the angle is above a full rotation
         if(lowerOffset >= 0){
-            lowerBound = scopeReference - lowerOffset;
-            upperBound = scopeReference + (360 - lowerOffset);
+            lowerBound = curAngle - lowerOffset;
+            upperBound = curAngle + (360 - lowerOffset);
         } else {
-            upperBound = scopeReference - lowerOffset;
-            lowerBound = scopeReference + (360 + lowerOffset);
+            upperBound = curAngle - lowerOffset;
+            lowerBound = curAngle + (360 + lowerOffset);
         }
         while(newAngle < lowerBound){
             newAngle += 360;
@@ -85,47 +101,80 @@ public class SwerveModule {
         while(newAngle > upperBound){
             newAngle -= 360;
         }
-        if(newAngle - scopeReference > 180){
+        if(newAngle - curAngle > 180){
             newAngle += 360;
         }
         return newAngle;
     }
 
-    //setters + getters for speed + theta (separately)
-
     //get drive motor direction
-
-    //get motor position
 
     //config motor offset (in the case the motor and encoder are not aligned)
 
-    //zero out drive motor
 
+    //Zero out motors
+    public void resetEncoders(){
+        m_driveEncoder.setPosition(0);
+    }
 
-    /* Gear ratio is 4.71:1 according to the MAXSwerve Module
-     purchashing page */
-
+    //Subject to change if we find that accounting for the Absolute Encoder's angle
+    //at all times is preferable to the internal encoder's
     public SwerveModuleState getState(){
-        return new SwerveModuleState();
+        return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getTurningPosition()));
     }
 
-    public double getDrivePosition(){ 
-        return 0.0;
+    public SwerveModulePosition getPosition(){
+        return new SwerveModulePosition(
+            m_driveEncoder.getPosition(), new Rotation2d(getTurningPosition()));
     }
+   
     public double getTurningPosition(){ 
-        return 0.0;
+        return m_steerEncoder.getPosition();
     }
 
-    public double getDriveVelocity(){ return 0.0;}
-    public double getTurningVelocity(){ return 0.0;}
+    public double getDriveVelocity(){
+        return m_driveEncoder.getVelocity();
+    }
 
+    public double getTurningVelocity(){
+        return m_steerEncoder.getVelocity();
+    }
 
+    //Get Distance Command
+
+    // /* (Given this is an analog input), you can divide the encoder's voltage reading by 
+    //  * the amount supplied to obtain its percent of a full rotation.
+    //  * 
+    //  * Simply multiply by 2pi and subtract the offset to obtain the current angle
+    //  * in radians.
+    //  */
+    // public double getAbsoluteEncoderRad(){
+    //     double theta = m_absoluteEncoder.getVoltage() / RobotController.getVoltage5V();
+    //     theta *= (2.0 * Math.PI);
+    //     theta -= absoluteEncoderOffsetRad;
+    //     return theta * (isAbsEncoderReversed ? -1.0 : 1.0);
+
+    // }
+
+       //Set desired state (based on utilizing the SparkMAX PID Controllers)
+    public void setDesiredState(SwerveModuleState desiredState, boolean isOpenLoop, boolean steerInPlace){
+        desiredState = optimize(desiredState, getState().angle);
+        // m_driveMotor.set(desiredState.speedMetersPerSecond / kPhysicalMaxSpeedMetersPerSecond);
+        m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkMax.ControlType.kVelocity);
+        m_steerPIDController.setReference(desiredState.angle.getRadians(), CANSparkMax.ControlType.kPosition);
+    }
+
+    
      //m/s to rpm
-      //Velocity(m/s) / wheel circumference (meters/revolution) * gear ratio (unitless) * 60 (seconds) --> dimensional analysis
+     //Velocity(m/s) / wheel circumference (meters/revolution) * gear ratio (unitless) * 60 (seconds) --> dimensional analysis
     private double VelocitytoRPM(double velocityMetersPerSecond){
 
         return (velocityMetersPerSecond * 60 * kGearRatio) / ((Units.inchesToMeters(kWheelDiameterInches) * Math.PI));
  
     }
 
+    public void stop(){
+        m_driveMotor.set(0);
+        m_steerMotor.set(0);
+    }
 }
