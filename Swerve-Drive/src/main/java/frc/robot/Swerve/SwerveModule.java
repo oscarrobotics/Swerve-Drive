@@ -2,8 +2,11 @@ package frc.robot.Swerve;
 
 import com.revrobotics.AnalogInput;
 import com.revrobotics.CANSparkMax;
+import com.revrobotics.RelativeEncoder;
 import com.revrobotics.SparkMaxAbsoluteEncoder;
+import com.revrobotics.SparkMaxAlternateEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
+import com.revrobotics.SparkMaxRelativeEncoder.Type;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxRelativeEncoder;
 
@@ -17,14 +20,15 @@ import edu.wpi.first.wpilibj.RobotController;
 public class SwerveModule {
 
     public final String moduleName;
+    public final int moduleNumber;
     
     /* Motors/Encoders */
 
     private CANSparkMax m_driveMotor;
     private CANSparkMax m_steerMotor;
 
-    private SparkMaxRelativeEncoder m_driveEncoder;
-    private SparkMaxAbsoluteEncoder m_steerEncoder;
+    private RelativeEncoder m_driveEncoder;
+    private RelativeEncoder m_steerEncoder;
 
     private SparkMaxPIDController m_drivePIDController;
     private SparkMaxPIDController m_steerPIDController;
@@ -36,25 +40,24 @@ public class SwerveModule {
 
     
 
-    /* Constants (may move later) */
 
-    final double kGearRatio = 4.71; //4.71:1 presumably
-    final int kWheelDiameterInches = 3;
-    final double kPhysicalMaxSpeedMetersPerSecond = 0.0;
 
     //Constructor
     //pass in constants
-    public SwerveModule(String moduleName, int driveCANId, int steerCANId, double angularOffset, boolean isReversed) {
+    public SwerveModule(String moduleName, int moduleNumber, int driveCANId, int steerCANId, double angularOffset, boolean isReversed) {
         this.moduleName = moduleName;
+        this.moduleNumber = moduleNumber;
         m_driveMotor = new CANSparkMax(driveCANId, MotorType.kBrushless);
         m_steerMotor = new CANSparkMax(steerCANId, MotorType.kBrushless);
+
+        m_driveEncoder = m_driveMotor.getEncoder(SparkMaxRelativeEncoder.Type.kHallSensor, 42);
+        m_steerEncoder = m_steerMotor.getAlternateEncoder(SparkMaxAlternateEncoder.Type.kQuadrature, 8192);
+
 
         m_drivePIDController = m_driveMotor.getPIDController();
         m_steerPIDController = m_steerMotor.getPIDController();
         
-
-
-        angularOffset = m_steerEncoder.getZeroOffset();
+        angularOffset = 0.0;
         //Important to know the motor's states before configuration; also useful for first 
         //setting up the motors
         m_driveMotor.restoreFactoryDefaults();
@@ -107,10 +110,15 @@ public class SwerveModule {
         return newAngle;
     }
 
-    //get drive motor direction
+    //set position and turning angle
+    public void setAngle(SwerveModuleState desiredState, boolean steerInPlace){
 
+    }
     //config motor offset (in the case the motor and encoder are not aligned)
 
+    // private Rotation2d getAngle(){
+        
+    // }
 
     //Zero out motors
     public void resetEncoders(){
@@ -160,18 +168,20 @@ public class SwerveModule {
     public void setDesiredState(SwerveModuleState desiredState, boolean isOpenLoop, boolean steerInPlace){
         desiredState = optimize(desiredState, getState().angle);
         // m_driveMotor.set(desiredState.speedMetersPerSecond / kPhysicalMaxSpeedMetersPerSecond);
+
         m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkMax.ControlType.kVelocity);
         m_steerPIDController.setReference(desiredState.angle.getRadians(), CANSparkMax.ControlType.kPosition);
+
     }
 
     
      //m/s to rpm
      //Velocity(m/s) / wheel circumference (meters/revolution) * gear ratio (unitless) * 60 (seconds) --> dimensional analysis
-    private double VelocitytoRPM(double velocityMetersPerSecond){
+    // private double VelocitytoRPM(double velocityMetersPerSecond){
 
-        return (velocityMetersPerSecond * 60 * kGearRatio) / ((Units.inchesToMeters(kWheelDiameterInches) * Math.PI));
+    //     return (velocityMetersPerSecond * 60 * kGearRatio) / ((Units.inchesToMeters(kWheelDiameterInches) * Math.PI));
  
-    }
+    // }
 
     public void stop(){
         m_driveMotor.set(0);
