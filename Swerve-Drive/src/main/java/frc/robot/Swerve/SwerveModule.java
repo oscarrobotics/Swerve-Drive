@@ -1,5 +1,6 @@
 package frc.robot.Swerve;
 
+import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.AnalogInput;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
@@ -28,7 +29,7 @@ public class SwerveModule {
     private CANSparkMax m_steerMotor;
 
     private RelativeEncoder m_driveEncoder;
-    private RelativeEncoder m_steerEncoder;
+    private AbsoluteEncoder m_steerEncoder;
 
     private SparkMaxPIDController m_drivePIDController;
     private SparkMaxPIDController m_steerPIDController;
@@ -51,7 +52,7 @@ public class SwerveModule {
         m_steerMotor = new CANSparkMax(steerCANId, MotorType.kBrushless);
 
         m_driveEncoder = m_driveMotor.getEncoder(SparkMaxRelativeEncoder.Type.kHallSensor, 42);
-        m_steerEncoder = m_steerMotor.getAlternateEncoder(SparkMaxAlternateEncoder.Type.kQuadrature, 8192);
+        m_steerEncoder = m_steerMotor.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle);
 
 
         m_drivePIDController = m_driveMotor.getPIDController();
@@ -128,16 +129,16 @@ public class SwerveModule {
     //Subject to change if we find that accounting for the Absolute Encoder's angle
     //at all times is preferable to the internal encoder's
     public SwerveModuleState getState(){
-        return new SwerveModuleState(getDriveVelocity(), new Rotation2d(getTurningPosition()));
+        return new SwerveModuleState(getDriveVelocity(), getAbsoluteAngle());
     }
 
     public SwerveModulePosition getPosition(){
         return new SwerveModulePosition(
-            m_driveEncoder.getPosition(), new Rotation2d(getTurningPosition()));
+            m_driveEncoder.getPosition(), getAbsoluteAngle());
     }
    
-    public double getTurningPosition(){ 
-        return m_steerEncoder.getPosition();
+    public Rotation2d getAbsoluteAngle(){ 
+        return Rotation2d.fromDegrees(m_steerEncoder.getPosition());
     }
 
     public double getDriveVelocity(){
