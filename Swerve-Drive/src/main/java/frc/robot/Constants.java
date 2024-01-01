@@ -6,12 +6,18 @@ import edu.wpi.first.math.util.Units;
 
 public class Constants {
 
-    /*Drivetrain Constants*/
+    /* Drivetrain Constants */
       public static final double kGearRatio = 4.71; //4.71:1 presumably
       public static final int kWheelDiameterInches = 3;
-      public static final double kPhysicalMaxSpeedMetersPerSecond = 0.0;
+      public static final double kPhysicalMaxSpeedMetersPerSecond = 17.0;
 
-      /*Conversion Factors */
+      /* Charaterization values */
+        //kS = static forces; increase forces until mechanism works kA = 
+        public static final double SkS = 0.000;
+        public static final double SkA = 0.000;
+        public static final double SkV = 0.000;
+
+      /* Conversion Factors */
       public static final double angleConversionFactor = 360.0 / kGearRatio;
     
     public static final class SwerveKinematics{
@@ -34,4 +40,5 @@ public class Constants {
 
         public static final SwerveDriveKinematics kDriveKinematics = new SwerveDriveKinematics(kModuleTranslations);
     }
+
 }
