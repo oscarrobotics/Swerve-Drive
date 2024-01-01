@@ -11,10 +11,11 @@ import edu.wpi.first.math.kinematics.SwerveModuleState;
 public class SwerveSubsystem{
 
     //set can IDs
-    public final SwerveModule flModule = new SwerveModule("Front Left", 0, 1, 2, 0, false);
-    public final SwerveModule frModule = new SwerveModule("Front Right", 1, 3, 4, 0, false);
-    public final SwerveModule rlModule = new SwerveModule("Rear Left", 2, 5, 6, 0, false);
-    public final SwerveModule rrModule = new SwerveModule("Rear Right", 3, 7, 8, 0, false);
+
+    public final SwerveModule flModule = new SwerveModule("Front Left", 0, SwerveConstants.Mod0.constants);
+    public final SwerveModule frModule = new SwerveModule("Front Right", 1, SwerveConstants.Mod1.constants);
+    public final SwerveModule rlModule = new SwerveModule("Rear Left", 2, SwerveConstants.Mod2.constants);
+    public final SwerveModule rrModule = new SwerveModule("Rear Right", 3,  SwerveConstants.Mod3.constants);
 
     public final Pigeon2 m_gyro = new Pigeon2(0);
 

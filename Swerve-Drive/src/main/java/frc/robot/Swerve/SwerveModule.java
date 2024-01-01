@@ -1,5 +1,6 @@
 package frc.robot.Swerve;
 
+import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.AnalogInput;
 import com.revrobotics.CANSparkMax;
@@ -10,46 +11,52 @@ import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxRelativeEncoder.Type;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxRelativeEncoder;
+import com.revrobotics.CANSparkMax.ControlType;
 
+import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
 import edu.wpi.first.math.util.Units;
 import edu.wpi.first.wpilibj.RobotController;
+import frc.robot.Constants;
 
 public class SwerveModule {
 
-    public final String moduleName;
-    public final int moduleNumber;
-    
+    public String moduleName;
+    public int moduleNumber;
+    public Rotation2d lastAngle;
+    public Rotation2d angularOffset;
     /* Motors/Encoders */
 
     private CANSparkMax m_driveMotor;
     private CANSparkMax m_steerMotor;
 
     private RelativeEncoder m_driveEncoder;
+    private RelativeEncoder m_integratedSteerEncoder;
     private AbsoluteEncoder m_steerEncoder;
 
     private SparkMaxPIDController m_drivePIDController;
     private SparkMaxPIDController m_steerPIDController;
+
+    private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(Constants.SkS, Constants.SkV, Constants.SkA);
 
     /* Boolean conditions in case the positions are 
     reversed to how we want it when physically starting the bot */
     private boolean isAbsEncoderReversed;
     private double absoluteEncoderOffsetRad;
 
-    
-
-
 
     //Constructor
     //pass in constants
-    public SwerveModule(String moduleName, int moduleNumber, int driveCANId, int steerCANId, double angularOffset, boolean isReversed) {
+    public SwerveModule(String moduleName, int moduleNumber, SwerveModuleConstants moduleConstants) {
         this.moduleName = moduleName;
         this.moduleNumber = moduleNumber;
-        m_driveMotor = new CANSparkMax(driveCANId, MotorType.kBrushless);
-        m_steerMotor = new CANSparkMax(steerCANId, MotorType.kBrushless);
+        angularOffset = moduleConstants.angularOffset;
+
+        m_driveMotor = new CANSparkMax(moduleConstants.driveCANId, MotorType.kBrushless);
+        m_steerMotor = new CANSparkMax(moduleConstants.steerCANId, MotorType.kBrushless);
 
         m_driveEncoder = m_driveMotor.getEncoder(SparkMaxRelativeEncoder.Type.kHallSensor, 42);
         m_steerEncoder = m_steerMotor.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle);
@@ -58,7 +65,6 @@ public class SwerveModule {
         m_drivePIDController = m_driveMotor.getPIDController();
         m_steerPIDController = m_steerMotor.getPIDController();
         
-        angularOffset = 0.0;
         //Important to know the motor's states before configuration; also useful for first 
         //setting up the motors
         m_driveMotor.restoreFactoryDefaults();
@@ -111,19 +117,39 @@ public class SwerveModule {
         return newAngle;
     }
 
-    //set position and turning angle
-    public void setAngle(SwerveModuleState desiredState, boolean steerInPlace){
+    //set velocity and turning angle
 
+    /* Open loop: no position feedback while moving (useful for teleop) 
+     * Closed loop: position feedback (useful for auto)
+    */
+    private void setVelocity(SwerveModuleState desiredState, boolean isOpenLoop){
+        if(isOpenLoop){
+            double percentOutput = desiredState.speedMetersPerSecond / Constants.kPhysicalMaxSpeedMetersPerSecond;
+            m_driveMotor.set(percentOutput);
+        } else {
+            m_drivePIDController.setReference(
+                desiredState.speedMetersPerSecond,
+                ControlType.kVelocity,
+                0,
+                feedforward.calculate(desiredState.speedMetersPerSecond));
+        }
     }
+
+    private void setAngle(SwerveModuleState desiredState){
+        Rotation2d angle = 
+            (Math.abs(desiredState.speedMetersPerSecond) 
+                <= (Constants.kPhysicalMaxSpeedMetersPerSecond * 0.01)) 
+                ? lastAngle : desiredState.angle;
+        m_steerPIDController.setReference(angle.getDegrees(), ControlType.kPosition);
+    }
+
     //config motor offset (in the case the motor and encoder are not aligned)
 
-    // private Rotation2d getAngle(){
-        
-    // }
 
     //Zero out motors
     public void resetEncoders(){
         m_driveEncoder.setPosition(0);
+        m_integratedSteerEncoder.setPosition(0);
     }
 
     //Subject to change if we find that accounting for the Absolute Encoder's angle
@@ -137,6 +163,10 @@ public class SwerveModule {
             m_driveEncoder.getPosition(), getAbsoluteAngle());
     }
    
+    private Rotation2d getAngle(){
+        return Rotation2d.fromDegrees(m_integratedSteerEncoder.getPosition());
+    }
+
     public Rotation2d getAbsoluteAngle(){ 
         return Rotation2d.fromDegrees(m_steerEncoder.getPosition());
     }
