@@ -5,7 +5,7 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.util.Units;
 
 public class Constants {
-
+    public static final double swerveDeadband = 0.1;
     /* Drivetrain Constants */
       public static final double kGearRatio = 4.71; //4.71:1 presumably
       public static final int kWheelDiameterInches = 3;
@@ -38,7 +38,7 @@ public class Constants {
             new Translation2d(-kWheelBase / 2, -kTrackWidth / 2)
         };
 
-        public static final SwerveDriveKinematics kDriveKinematics = new SwerveDriveKinematics(kModuleTranslations);
+      public static final SwerveDriveKinematics kKinematics = new SwerveDriveKinematics(kModuleTranslations);
     }
 
 }

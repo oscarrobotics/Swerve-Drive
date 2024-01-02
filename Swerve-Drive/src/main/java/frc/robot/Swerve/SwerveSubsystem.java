@@ -1,29 +1,62 @@
 package frc.robot.Swerve;
 
+import java.util.function.BooleanSupplier;
+import java.util.function.DoubleSupplier;
+
 import com.ctre.phoenix.sensors.Pigeon2;
 
+import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
+import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
+import edu.wpi.first.math.kinematics.ChassisSpeeds;
 import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
+import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.wpilibj.smartdashboard.Field2d;
+import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import edu.wpi.first.wpilibj2.command.CommandBase;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
+import frc.robot.Constants;
+import frc.robot.Constants.SwerveKinematics;
 
-public class SwerveSubsystem{
+public class SwerveSubsystem extends SubsystemBase{
 
-    //set can IDs
+    private final Pigeon2 m_gyro = new Pigeon2(0);
+
+    private SwerveDriveOdometry swerveOdometry;
+    private SwerveModule[] m_modules;
+
+    private Field2d m_field;
 
     public final SwerveModule flModule = new SwerveModule("Front Left", 0, SwerveConstants.Mod0.constants);
     public final SwerveModule frModule = new SwerveModule("Front Right", 1, SwerveConstants.Mod1.constants);
     public final SwerveModule rlModule = new SwerveModule("Rear Left", 2, SwerveConstants.Mod2.constants);
     public final SwerveModule rrModule = new SwerveModule("Rear Right", 3,  SwerveConstants.Mod3.constants);
 
-    public final Pigeon2 m_gyro = new Pigeon2(0);
-
     // public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(m_kinematics, m_gyro.getYaw(), getModulePositions(), new Pose2d(), );
 
-    public final SwerveModule[] m_modules = new SwerveModule[]{
-        flModule, frModule, rlModule, rrModule
-    };
+    public SwerveSubsystem(){
+        m_modules = new SwerveModule[]{
+            flModule, frModule, rlModule, rrModule
+        };
+
+        m_field = new Field2d();
+        SmartDashboard.putData("Field", m_field);
+    }
+
+    public void drive(double vxMeters, double vyMeters, double omegaRadians, boolean fieldRelative, boolean isOpenLoop){
+        ChassisSpeeds targetChassisSpeeds = fieldRelative
+            ? ChassisSpeeds.fromFieldRelativeSpeeds(vxMeters, vyMeters, omegaRadians, getHeading())
+            : new ChassisSpeeds(vxMeters, vyMeters, omegaRadians);
+        setChassisSpeeds(targetChassisSpeeds, isOpenLoop, isOpenLoop);
+    }
+
+    public void setChassisSpeeds(ChassisSpeeds targetChassisSpeeds, boolean openLoop, boolean steerInPlace){
+        setModuleStates(Constants.SwerveKinematics.kKinematics.toSwerveModuleStates(targetChassisSpeeds), openLoop, steerInPlace);
+    }
 
     public SwerveModuleState[] getModuleStates() {
 		SwerveModuleState[] states = new SwerveModuleState[4];
@@ -47,6 +80,36 @@ public class SwerveSubsystem{
         for (SwerveModule mod : m_modules){
             mod.setDesiredState(desiredStates[mod.moduleNumber], isOpenLoop, steerInPlace);
         }
+    }
+
+    public Rotation2d getHeading(){
+        return Rotation2d.fromDegrees(getGyroYaw());
+    }
+
+    private double getGyroYaw(){
+        return m_gyro.getYaw();
+    }
+
+    public CommandBase teleopDrive(
+            DoubleSupplier translation, DoubleSupplier rotation, DoubleSupplier strafe,
+            BooleanSupplier robotCentric, BooleanSupplier openLoop){
+        return run(() -> {
+            double translationVal = MathUtil.applyDeadband(translation.getAsDouble(), Constants.swerveDeadband);
+            double rotationVal = MathUtil.applyDeadband(rotation.getAsDouble(), Constants.swerveDeadband);
+            double strafeVal = MathUtil.applyDeadband(strafe.getAsDouble(), Constants.swerveDeadband);
+
+            //finish up
+        }).withName("Teleop Drive");
+    }
+
+    //Controller --> Chassispeeds --> Swerve Module State [x4]
+    //Odometry
+    //Field-based orientation
+    //Drive command
+
+    @Override
+    public void periodic(){
+        
     }
 }
 
