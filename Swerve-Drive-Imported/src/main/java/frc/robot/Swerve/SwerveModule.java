@@ -1,17 +1,20 @@
 package frc.robot.Swerve;
 
-import com.ctre.phoenix.motorcontrol.ControlMode;
 import com.revrobotics.AbsoluteEncoder;
 import com.revrobotics.AnalogInput;
+import com.revrobotics.CANSparkBase;
+import com.revrobotics.CANSparkLowLevel;
 import com.revrobotics.CANSparkMax;
 import com.revrobotics.RelativeEncoder;
+import com.revrobotics.SparkAbsoluteEncoder;
 import com.revrobotics.SparkMaxAbsoluteEncoder;
 import com.revrobotics.SparkMaxAlternateEncoder;
 import com.revrobotics.CANSparkMaxLowLevel.MotorType;
 import com.revrobotics.SparkMaxRelativeEncoder.Type;
 import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxRelativeEncoder;
-import com.revrobotics.CANSparkMax.ControlType;
+import com.revrobotics.SparkPIDController;
+import com.revrobotics.SparkRelativeEncoder;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -37,8 +40,8 @@ public class SwerveModule {
     private RelativeEncoder m_integratedSteerEncoder;
     private AbsoluteEncoder m_steerEncoder;
 
-    private SparkMaxPIDController m_drivePIDController;
-    private SparkMaxPIDController m_steerPIDController;
+    private SparkPIDController m_drivePIDController;
+    private SparkPIDController m_steerPIDController;
 
     private final SimpleMotorFeedforward feedforward = new SimpleMotorFeedforward(Constants.SkS, Constants.SkV, Constants.SkA);
 
@@ -55,11 +58,11 @@ public class SwerveModule {
         this.moduleNumber = moduleNumber;
         angularOffset = moduleConstants.angularOffset;
 
-        m_driveMotor = new CANSparkMax(moduleConstants.driveCANId, MotorType.kBrushless);
-        m_steerMotor = new CANSparkMax(moduleConstants.steerCANId, MotorType.kBrushless);
+        m_driveMotor = new CANSparkMax(moduleConstants.driveCANId, CANSparkLowLevel.MotorType.kBrushless);
+        m_steerMotor = new CANSparkMax(moduleConstants.steerCANId, CANSparkLowLevel.MotorType.kBrushless);
 
-        m_driveEncoder = m_driveMotor.getEncoder(SparkMaxRelativeEncoder.Type.kHallSensor, 42);
-        m_steerEncoder = m_steerMotor.getAbsoluteEncoder(SparkMaxAbsoluteEncoder.Type.kDutyCycle);
+        m_driveEncoder = m_driveMotor.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
+        m_steerEncoder = m_steerMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
 
 
         m_drivePIDController = m_driveMotor.getPIDController();
@@ -129,7 +132,7 @@ public class SwerveModule {
         } else {
             m_drivePIDController.setReference(
                 desiredState.speedMetersPerSecond,
-                ControlType.kVelocity,
+                com.revrobotics.CANSparkBase.ControlType.kVelocity,
                 0,
                 feedforward.calculate(desiredState.speedMetersPerSecond));
         }
@@ -140,7 +143,7 @@ public class SwerveModule {
             (Math.abs(desiredState.speedMetersPerSecond) 
                 <= (Constants.kPhysicalMaxSpeedMetersPerSecond * 0.01)) 
                 ? lastAngle : desiredState.angle;
-        m_steerPIDController.setReference(angle.getDegrees(), ControlType.kPosition);
+        m_steerPIDController.setReference(angle.getDegrees(), CANSparkBase.ControlType.kPosition);
     }
 
     //config motor offset (in the case the motor and encoder are not aligned)
@@ -200,7 +203,8 @@ public class SwerveModule {
         desiredState = optimize(desiredState, getState().angle);
         // m_driveMotor.set(desiredState.speedMetersPerSecond / kPhysicalMaxSpeedMetersPerSecond);
 
-        m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkMax.ControlType.kVelocity);
+        // m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkBase.ControlType.kVelocity);
+        m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkBase.ControlType.kVelocity);
         m_steerPIDController.setReference(desiredState.angle.getRadians(), CANSparkMax.ControlType.kPosition);
 
     }

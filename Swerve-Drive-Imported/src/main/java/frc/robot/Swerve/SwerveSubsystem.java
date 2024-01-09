@@ -3,7 +3,8 @@ package frc.robot.Swerve;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
 
-import com.ctre.phoenix.sensors.Pigeon2;
+import com.ctre.phoenix6.StatusSignal;
+import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
@@ -35,7 +36,6 @@ public class SwerveSubsystem extends SubsystemBase{
     public final SwerveModule frModule = new SwerveModule("Front Right", 1, SwerveConstants.Mod1.constants);
     public final SwerveModule rlModule = new SwerveModule("Rear Left", 2, SwerveConstants.Mod2.constants);
     public final SwerveModule rrModule = new SwerveModule("Rear Right", 3,  SwerveConstants.Mod3.constants);
-
     // public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(m_kinematics, m_gyro.getYaw(), getModulePositions(), new Pose2d(), );
 
     public SwerveSubsystem(){
@@ -45,6 +45,8 @@ public class SwerveSubsystem extends SubsystemBase{
 
         m_field = new Field2d();
         SmartDashboard.putData("Field", m_field);
+
+        var pigeon2YawSignal = m_gyro.getYaw();
     }
 
     public void drive(double vxMeters, double vyMeters, double omegaRadians, boolean fieldRelative, boolean isOpenLoop){
@@ -83,10 +85,10 @@ public class SwerveSubsystem extends SubsystemBase{
     }
 
     public Rotation2d getHeading(){
-        return Rotation2d.fromDegrees(getGyroYaw());
+        return Rotation2d.fromDegrees(getGyroYaw().getValueAsDouble());
     }
 
-    private double getGyroYaw(){
+    private StatusSignal<Double> getGyroYaw(){
         return m_gyro.getYaw();
     }
 
