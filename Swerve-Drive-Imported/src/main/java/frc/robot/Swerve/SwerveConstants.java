@@ -11,8 +11,8 @@ public class SwerveConstants {
 
     public static final class Mod0{
         public static final String moduleName = "";
-        public static final int driveCANId = 0;
-        public static final int steerCANId = 0;
+        public static final int driveCANId = 1;
+        public static final int steerCANId = 2;
         public static final Rotation2d angularOffset = Rotation2d.fromDegrees(0.0);
         public static final boolean isReversed = true;
         public static final SwerveModuleConstants constants = new SwerveModuleConstants(moduleName, driveCANId, steerCANId, angularOffset, isReversed);
@@ -20,8 +20,8 @@ public class SwerveConstants {
     
     public static final class Mod1{
         public static final String moduleName = "";
-        public static final int driveCANId = 0;
-        public static final int steerCANId = 0;
+        public static final int driveCANId = 3;
+        public static final int steerCANId = 4;
         public static final Rotation2d angularOffset = Rotation2d.fromDegrees(0.0);
         public static final boolean isReversed = true;
         public static final SwerveModuleConstants constants = new SwerveModuleConstants(moduleName, driveCANId, steerCANId, angularOffset, isReversed);
@@ -29,8 +29,8 @@ public class SwerveConstants {
     
     public static final class Mod2{
         public static final String moduleName = "";
-        public static final int driveCANId = 0;
-        public static final int steerCANId = 0;
+        public static final int driveCANId = 5;
+        public static final int steerCANId = 6;
         public static final Rotation2d angularOffset = Rotation2d.fromDegrees(0.0);
         public static final boolean isReversed = true;
         public static final SwerveModuleConstants constants = new SwerveModuleConstants(moduleName, driveCANId, steerCANId, angularOffset, isReversed);
@@ -38,8 +38,8 @@ public class SwerveConstants {
     
     public static final class Mod3{
         public static final String moduleName = "";
-        public static final int driveCANId = 0;
-        public static final int steerCANId = 0;
+        public static final int driveCANId = 7;
+        public static final int steerCANId = 8;
         public static final Rotation2d angularOffset = Rotation2d.fromDegrees(0.0);
         public static final boolean isReversed = true;
         public static final SwerveModuleConstants constants = new SwerveModuleConstants(moduleName, driveCANId, steerCANId, angularOffset, isReversed);

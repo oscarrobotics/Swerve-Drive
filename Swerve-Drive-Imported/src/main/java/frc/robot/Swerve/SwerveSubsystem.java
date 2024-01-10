@@ -7,6 +7,8 @@ import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.Pigeon2;
 
 import edu.wpi.first.math.MathUtil;
+import edu.wpi.first.math.Matrix;
+import edu.wpi.first.math.VecBuilder;
 import edu.wpi.first.math.estimator.SwerveDrivePoseEstimator;
 import edu.wpi.first.math.geometry.Pose2d;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -16,6 +18,8 @@ import edu.wpi.first.math.kinematics.SwerveDriveKinematics;
 import edu.wpi.first.math.kinematics.SwerveDriveOdometry;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
+import edu.wpi.first.math.numbers.N1;
+import edu.wpi.first.math.numbers.N3;
 import edu.wpi.first.wpilibj.smartdashboard.Field2d;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
@@ -31,12 +35,14 @@ public class SwerveSubsystem extends SubsystemBase{
     private SwerveModule[] m_modules;
 
     private Field2d m_field;
+    public Matrix<N3,N1> stateStdDevs = VecBuilder.fill(0.1,0.1,0.1);
 
     public final SwerveModule flModule = new SwerveModule("Front Left", 0, SwerveConstants.Mod0.constants);
     public final SwerveModule frModule = new SwerveModule("Front Right", 1, SwerveConstants.Mod1.constants);
     public final SwerveModule rlModule = new SwerveModule("Rear Left", 2, SwerveConstants.Mod2.constants);
     public final SwerveModule rrModule = new SwerveModule("Rear Right", 3,  SwerveConstants.Mod3.constants);
-    // public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(m_kinematics, m_gyro.getYaw(), getModulePositions(), new Pose2d(), );
+    // public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(m_kinematics, m_gyro.getYaw(), getModulePositions(), new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(0)), stateStdDevs);
+
 
     public SwerveSubsystem(){
         m_modules = new SwerveModule[]{
@@ -111,7 +117,8 @@ public class SwerveSubsystem extends SubsystemBase{
 
     @Override
     public void periodic(){
-        
+
+        // m_swerve.updateOdometry();
     }
 }
 

@@ -22,7 +22,9 @@ import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
 import edu.wpi.first.math.util.Units;
+import edu.wpi.first.wpilibj.Encoder;
 import edu.wpi.first.wpilibj.RobotController;
+import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
 
 public class SwerveModule {
@@ -38,7 +40,7 @@ public class SwerveModule {
 
     private RelativeEncoder m_driveEncoder;
     private RelativeEncoder m_integratedSteerEncoder;
-    private AbsoluteEncoder m_steerEncoder;
+    // private AbsoluteEncoder m_steerEncoder;
 
     private SparkPIDController m_drivePIDController;
     private SparkPIDController m_steerPIDController;
@@ -60,9 +62,9 @@ public class SwerveModule {
 
         m_driveMotor = new CANSparkMax(moduleConstants.driveCANId, CANSparkLowLevel.MotorType.kBrushless);
         m_steerMotor = new CANSparkMax(moduleConstants.steerCANId, CANSparkLowLevel.MotorType.kBrushless);
-
+        m_integratedSteerEncoder = m_steerMotor.getAlternateEncoder(8192);
         m_driveEncoder = m_driveMotor.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
-        m_steerEncoder = m_steerMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
+        // m_steerEncoder = m_steerMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
 
 
         m_drivePIDController = m_driveMotor.getPIDController();
@@ -171,7 +173,7 @@ public class SwerveModule {
     }
 
     public Rotation2d getAbsoluteAngle(){ 
-        return Rotation2d.fromDegrees(m_steerEncoder.getPosition());
+        return Rotation2d.fromDegrees(m_integratedSteerEncoder.getPosition());
     }
 
     public double getDriveVelocity(){
@@ -179,7 +181,7 @@ public class SwerveModule {
     }
 
     public double getTurningVelocity(){
-        return m_steerEncoder.getVelocity();
+        return m_integratedSteerEncoder.getVelocity();
     }
 
     //Get Distance Command
@@ -222,4 +224,5 @@ public class SwerveModule {
         m_driveMotor.set(0);
         m_steerMotor.set(0);
     }
+
 }
