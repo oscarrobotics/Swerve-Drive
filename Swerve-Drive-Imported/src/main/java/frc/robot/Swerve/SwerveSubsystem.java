@@ -112,6 +112,8 @@ public class SwerveSubsystem extends SubsystemBase{
             translationVal *= Constants.kPhysicalMaxSpeedMetersPerSecond;
 
             strafeVal *= Constants.kPhysicalMaxSpeedMetersPerSecond;
+
+            rotationVal *= Constants.kMaxRotSpeedRadPerSecond;
     
             drive(translationVal, strafeVal, rotationVal, !robotCentric.getAsBoolean(), isOpenLoop);
         }).withName("Teleop Drive");
