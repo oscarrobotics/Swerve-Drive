@@ -32,7 +32,6 @@ public class SwerveSubsystem extends SubsystemBase{
     private final Pigeon2 m_gyro = new Pigeon2(0);
 
     private SwerveDriveOdometry swerveOdometry;
-    private SwerveModule[] m_modules;
 
     private Field2d m_field;
     public Matrix<N3,N1> stateStdDevs = VecBuilder.fill(0.1,0.1,0.1);
@@ -43,11 +42,12 @@ public class SwerveSubsystem extends SubsystemBase{
     public final SwerveModule rrModule = new SwerveModule("Rear Right", 3,  SwerveConstants.Mod3.constants);
     // public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(m_kinematics, m_gyro.getYaw(), getModulePositions(), new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(0)), stateStdDevs);
 
+    private final SwerveModule[] m_modules = new SwerveModule[]{
+            flModule, frModule, rlModule, rrModule
+    };
+
 
     public SwerveSubsystem(){
-        m_modules = new SwerveModule[]{
-            flModule, frModule, rlModule, rrModule
-        };
 
         m_field = new Field2d();
         SmartDashboard.putData("Field", m_field);
@@ -59,6 +59,7 @@ public class SwerveSubsystem extends SubsystemBase{
         ChassisSpeeds targetChassisSpeeds = fieldRelative
             ? ChassisSpeeds.fromFieldRelativeSpeeds(vxMeters, vyMeters, omegaRadians, getHeading())
             : new ChassisSpeeds(vxMeters, vyMeters, omegaRadians);
+
         setChassisSpeeds(targetChassisSpeeds, isOpenLoop, isOpenLoop);
     }
 
@@ -103,10 +104,16 @@ public class SwerveSubsystem extends SubsystemBase{
             BooleanSupplier robotCentric, BooleanSupplier openLoop){
         return run(() -> {
             double translationVal = MathUtil.applyDeadband(translation.getAsDouble(), Constants.swerveDeadband);
-            double rotationVal = MathUtil.applyDeadband(rotation.getAsDouble(), Constants.swerveDeadband);
             double strafeVal = MathUtil.applyDeadband(strafe.getAsDouble(), Constants.swerveDeadband);
+            double rotationVal = MathUtil.applyDeadband(rotation.getAsDouble(), Constants.swerveDeadband);
+            
+            boolean isOpenLoop = openLoop.getAsBoolean();
 
-            //finish up
+            translationVal *= Constants.kPhysicalMaxSpeedMetersPerSecond;
+
+            strafeVal *= Constants.kPhysicalMaxSpeedMetersPerSecond;
+    
+            drive(translationVal, strafeVal, rotationVal, !robotCentric.getAsBoolean(), isOpenLoop);
         }).withName("Teleop Drive");
     }
 

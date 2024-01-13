@@ -6,7 +6,7 @@ public class SwerveConstants {
 
     final double kGearRatio = 4.71; //4.71:1 presumably
     final int kWheelDiameterInches = 3;
-    final double kPhysicalMaxSpeedMetersPerSecond = 0.0;
+    final double kPhysicalMaxSpeedMetersPerSecond = 5.0;
 
 
     public static final class Mod0{

@@ -134,10 +134,10 @@ public class SwerveModule {
         } else {
             m_drivePIDController.setReference(
                 desiredState.speedMetersPerSecond,
-                com.revrobotics.CANSparkBase.ControlType.kVelocity,
+                CANSparkBase.ControlType.kVelocity,
                 0,
                 feedforward.calculate(desiredState.speedMetersPerSecond));
-        }
+            }
     }
 
     private void setAngle(SwerveModuleState desiredState){
