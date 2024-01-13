@@ -60,7 +60,7 @@ public class SwerveSubsystem extends SubsystemBase{
             ? ChassisSpeeds.fromFieldRelativeSpeeds(vxMeters, vyMeters, omegaRadians, getHeading())
             : new ChassisSpeeds(vxMeters, vyMeters, omegaRadians);
 
-        setChassisSpeeds(targetChassisSpeeds, isOpenLoop, isOpenLoop);
+        setChassisSpeeds(targetChassisSpeeds, isOpenLoop, false);
     }
 
     public void setChassisSpeeds(ChassisSpeeds targetChassisSpeeds, boolean openLoop, boolean steerInPlace){
@@ -101,11 +101,13 @@ public class SwerveSubsystem extends SubsystemBase{
 
     public Command teleopDrive(
             DoubleSupplier translation, DoubleSupplier rotation, DoubleSupplier strafe,
-            BooleanSupplier robotCentric, BooleanSupplier openLoop){
+            BooleanSupplier fieldRelative, BooleanSupplier openLoop){
         return run(() -> {
             double translationVal = MathUtil.applyDeadband(translation.getAsDouble(), Constants.swerveDeadband);
             double strafeVal = MathUtil.applyDeadband(strafe.getAsDouble(), Constants.swerveDeadband);
             double rotationVal = MathUtil.applyDeadband(rotation.getAsDouble(), Constants.swerveDeadband);
+
+            
             
             boolean isOpenLoop = openLoop.getAsBoolean();
 
@@ -114,8 +116,7 @@ public class SwerveSubsystem extends SubsystemBase{
             strafeVal *= Constants.kPhysicalMaxSpeedMetersPerSecond;
 
             rotationVal *= Constants.kMaxRotSpeedRadPerSecond;
-    
-            drive(translationVal, strafeVal, rotationVal, !robotCentric.getAsBoolean(), isOpenLoop);
+            drive(translationVal, strafeVal, rotationVal, fieldRelative.getAsBoolean(), isOpenLoop);
         }).withName("Teleop Drive");
     }
 
@@ -127,6 +128,11 @@ public class SwerveSubsystem extends SubsystemBase{
     @Override
     public void periodic(){
         // m_swerve.updateOdometry();
+        for(SwerveModule mod : m_modules){
+            // SmartDashboard.putNumber(mod.moduleName + "Desired Angle", mod.getAbsoluteAngle().getRadians());
+            // SmartDashboard.putNumber(mod.moduleName +"Desired Velocity", mod.getDriveVelocity());
+            SmartDashboard.putNumber(mod.moduleName +"Angle", mod.getAbsoluteAngle().getRadians());
+        }
     }
 }
 

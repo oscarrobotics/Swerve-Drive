@@ -15,6 +15,7 @@ import com.revrobotics.SparkMaxPIDController;
 import com.revrobotics.SparkMaxRelativeEncoder;
 import com.revrobotics.SparkPIDController;
 import com.revrobotics.SparkRelativeEncoder;
+import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
@@ -63,21 +64,51 @@ public class SwerveModule {
 
         m_driveMotor = new CANSparkMax(moduleConstants.driveCANId, CANSparkLowLevel.MotorType.kBrushless);
         m_steerMotor = new CANSparkMax(moduleConstants.steerCANId, CANSparkLowLevel.MotorType.kBrushless);
-        m_integratedSteerEncoder = m_steerMotor.getAlternateEncoder(8192);
-        m_driveEncoder = m_driveMotor.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
-        // m_steerEncoder = m_steerMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
 
-
-        m_drivePIDController = m_driveMotor.getPIDController();
-        m_steerPIDController = m_steerMotor.getPIDController();
-        
-        //Important to know the motor's states before configuration; also useful for first 
-        //setting up the motors
         m_driveMotor.restoreFactoryDefaults();
         m_steerMotor.restoreFactoryDefaults();
 
-        resetEncoders();
+        m_integratedSteerEncoder = m_steerMotor.getAlternateEncoder(8192);
+        // m_integratedSteerEncoder = m_steerMotor.getAbsoluteEncoder(Type.kDutyCycle)
+        m_driveEncoder = m_driveMotor.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
+        // m_steerEncoder = m_steerMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
 
+        m_drivePIDController = m_driveMotor.getPIDController();
+        m_steerPIDController = m_steerMotor.getPIDController();
+        m_drivePIDController.setFeedbackDevice(m_driveEncoder);
+        m_steerPIDController.setFeedbackDevice(m_integratedSteerEncoder);
+
+        m_driveEncoder.setPositionConversionFactor(1.99);
+        m_driveEncoder.setVelocityConversionFactor(0.0333);
+
+        m_integratedSteerEncoder.setPositionConversionFactor(6.28);
+        m_integratedSteerEncoder.setVelocityConversionFactor(0.105);
+
+        m_integratedSteerEncoder.setInverted(true);
+
+        m_steerPIDController.setPositionPIDWrappingEnabled(true);
+        m_steerPIDController.setPositionPIDWrappingMinInput(0);
+        m_steerPIDController.setPositionPIDWrappingMaxInput(2 * Math.PI);
+
+        m_drivePIDController.setP(0.000);
+        m_drivePIDController.setI(0.000);
+        m_drivePIDController.setD(0.000);
+        m_drivePIDController.setFF(0.001);
+
+        m_steerPIDController.setP(0.005);
+        m_steerPIDController.setI(0.000);
+        m_steerPIDController.setD(0.000);
+        m_steerPIDController.setFF(0.000);
+
+        m_driveMotor.setIdleMode(IdleMode.kBrake);
+        m_steerMotor.setIdleMode(IdleMode.kBrake);
+        m_driveMotor.setSmartCurrentLimit(50);
+        m_steerMotor.setSmartCurrentLimit(20);
+
+        m_driveMotor.burnFlash();
+        m_steerMotor.burnFlash();
+
+        resetEncoders();
     }
     //Controller --> Chassispeeds --> Swerve Module State [x4]
 
@@ -206,8 +237,11 @@ public class SwerveModule {
         desiredState = optimize(desiredState, getState().angle);
         // m_driveMotor.set(desiredState.speedMetersPerSecond / kPhysicalMaxSpeedMetersPerSecond);
 
+        System.out.println(desiredState.angle.getRadians());
+        
         // m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkBase.ControlType.kVelocity);
-        m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkBase.ControlType.kVelocity);
+        // m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkBase.ControlType.kVelocity);
+        m_drivePIDController.setReference(0, CANSparkBase.ControlType.kVelocity);
         m_steerPIDController.setReference(desiredState.angle.getRadians(), CANSparkMax.ControlType.kPosition);
 
     }
