@@ -9,7 +9,7 @@ public class Constants {
     /* Drivetrain Constants */
       public static final double kGearRatio = 4.71; //4.71:1 presumably
       public static final int kWheelDiameterInches = 3;
-      public static final double kPhysicalMaxSpeedMetersPerSecond = 3.0;
+      public static final double kPhysicalMaxSpeedMetersPerSecond = 2.0;
       public static final double kMaxRotSpeedRadPerSecond = 5.0;
 
       /* Charaterization values */
