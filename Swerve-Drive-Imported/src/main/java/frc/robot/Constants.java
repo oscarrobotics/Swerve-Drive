@@ -9,7 +9,7 @@ public class Constants {
     /* Drivetrain Constants */
       public static final double kGearRatio = 4.71; //4.71:1 presumably
       public static final int kWheelDiameterInches = 3;
-      public static final double kPhysicalMaxSpeedMetersPerSecond = 2.0;
+      public static final double kPhysicalMaxSpeedMetersPerSecond = 4.0;
       public static final double kMaxRotSpeedRadPerSecond = 5.0;
 
       /* Charaterization values */
@@ -21,25 +21,25 @@ public class Constants {
       /* Conversion Factors */
       public static final double angleConversionFactor = 360.0 / kGearRatio;
     
-    public static final class SwerveKinematics{
+//     public static final class SwerveKinematics{
 
-        /*drivetrain constants (meters)
-         * kTrackWidth = the width of the drivetrain, measured by the center of the wheels
-         * kWheelBase = the length of the drivetrain, measured by the center of the wheels
-         * kWheelCircumference = the circumference of the wheels
-        */
-        public static final double kTrackWidth = Units.inchesToMeters(23.5);
-        public static final double kWheelBase = Units.inchesToMeters(23.5);
-        public static final double kWheelCircumference = kWheelDiameterInches * Math.PI;
+//         /*drivetrain constants (meters)
+//          * kTrackWidth = the width of the drivetrain, measured by the center of the wheels
+//          * kWheelBase = the length of the drivetrain, measured by the center of the wheels
+//          * kWheelCircumference = the circumference of the wheels
+//         */
+//         public static final double kTrackWidth = Units.inchesToMeters(23.5);
+//         public static final double kWheelBase = Units.inchesToMeters(23.5);
+//         public static final double kWheelCircumference = kWheelDiameterInches * Math.PI;
 
-        public static final Translation2d[] kModuleTranslations = {
-            new Translation2d(kWheelBase / 2, kTrackWidth / 2),
-            new Translation2d(kWheelBase / 2, -kTrackWidth / 2),
-            new Translation2d(-kWheelBase / 2, kTrackWidth / 2),
-            new Translation2d(-kWheelBase / 2, -kTrackWidth / 2)
-        };
+//     //     public static final Translation2d[] kModuleTranslations = {
+//     //         new Translation2d(kWheelBase / 2, kTrackWidth / 2),
+//     //         new Translation2d(kWheelBase / 2, -kTrackWidth / 2),
+//     //         new Translation2d(-kWheelBase / 2, kTrackWidth / 2),
+//     //         new Translation2d(-kWheelBase / 2, -kTrackWidth / 2)
+//     //     };
 
-      public static final SwerveDriveKinematics kKinematics = new SwerveDriveKinematics(kModuleTranslations);
-    }
+//     //   public static final SwerveDriveKinematics kKinematics = new SwerveDriveKinematics(kModuleTranslations);
+//     // }
 
 }

@@ -19,6 +19,7 @@ import com.revrobotics.CANSparkBase.IdleMode;
 
 import edu.wpi.first.math.controller.SimpleMotorFeedforward;
 import edu.wpi.first.math.geometry.Rotation2d;
+import edu.wpi.first.math.geometry.Translation2d;
 import edu.wpi.first.math.kinematics.SwerveModulePosition;
 import edu.wpi.first.math.kinematics.SwerveModuleState;
 
@@ -35,13 +36,14 @@ public class SwerveModule {
     public int moduleNumber;
     public Rotation2d lastAngle;
     public Rotation2d angularOffset;
+    public Translation2d positionalOffset;
     /* Motors/Encoders */
 
     private CANSparkMax m_driveMotor;
     private CANSparkMax m_steerMotor;
 
     private RelativeEncoder m_driveEncoder;
-    private RelativeEncoder m_integratedSteerEncoder;
+    private AbsoluteEncoder m_integratedSteerEncoder;
     // private AbsoluteEncoder m_steerEncoder;
 
     private SparkPIDController m_drivePIDController;
@@ -61,6 +63,7 @@ public class SwerveModule {
         this.moduleName = moduleName;
         this.moduleNumber = moduleNumber;
         angularOffset = moduleConstants.angularOffset;
+        positionalOffset = moduleConstants.positionalOffset;
 
         m_driveMotor = new CANSparkMax(moduleConstants.driveCANId, CANSparkLowLevel.MotorType.kBrushless);
         m_steerMotor = new CANSparkMax(moduleConstants.steerCANId, CANSparkLowLevel.MotorType.kBrushless);
@@ -68,8 +71,8 @@ public class SwerveModule {
         m_driveMotor.restoreFactoryDefaults();
         m_steerMotor.restoreFactoryDefaults();
 
-        m_integratedSteerEncoder = m_steerMotor.getAlternateEncoder(8192);
-        // m_integratedSteerEncoder = m_steerMotor.getAbsoluteEncoder(Type.kDutyCycle)
+        // m_integratedSteerEncoder = m_steerMotor.getAlternateEncoder(SparkMaxAlternateEncoder.Type.kQuadrature, 8192);
+        m_integratedSteerEncoder = m_steerMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
         m_driveEncoder = m_driveMotor.getEncoder(SparkRelativeEncoder.Type.kHallSensor, 42);
         // m_steerEncoder = m_steerMotor.getAbsoluteEncoder(SparkAbsoluteEncoder.Type.kDutyCycle);
 
@@ -78,11 +81,11 @@ public class SwerveModule {
         m_drivePIDController.setFeedbackDevice(m_driveEncoder);
         m_steerPIDController.setFeedbackDevice(m_integratedSteerEncoder);
 
-        m_driveEncoder.setPositionConversionFactor(1.99);
-        m_driveEncoder.setVelocityConversionFactor(0.0333);
+        m_driveEncoder.setPositionConversionFactor(0.05077956125529683);
+        m_driveEncoder.setVelocityConversionFactor(0.0008463260209216138);
 
-        m_integratedSteerEncoder.setPositionConversionFactor(6.28);
-        m_integratedSteerEncoder.setVelocityConversionFactor(0.105);
+        m_integratedSteerEncoder.setPositionConversionFactor(6.283185307179586);
+        m_integratedSteerEncoder.setVelocityConversionFactor(0.10471975511965977);
 
         m_integratedSteerEncoder.setInverted(true);
 
@@ -93,9 +96,9 @@ public class SwerveModule {
         m_drivePIDController.setP(0.000);
         m_drivePIDController.setI(0.000);
         m_drivePIDController.setD(0.000);
-        m_drivePIDController.setFF(0.001);
+        m_drivePIDController.setFF(0.25);
 
-        m_steerPIDController.setP(0.005);
+        m_steerPIDController.setP(1);
         m_steerPIDController.setI(0.000);
         m_steerPIDController.setD(0.000);
         m_steerPIDController.setFF(0.000);
@@ -186,7 +189,6 @@ public class SwerveModule {
     //Zero out motors
     public void resetEncoders(){
         m_driveEncoder.setPosition(0);
-        m_integratedSteerEncoder.setPosition(0);
     }
 
     //Subject to change if we find that accounting for the Absolute Encoder's angle
@@ -200,12 +202,13 @@ public class SwerveModule {
             m_driveEncoder.getPosition(), getAbsoluteAngle());
     }
    
-    private Rotation2d getAngle(){
-        return Rotation2d.fromDegrees(m_integratedSteerEncoder.getPosition());
+    public double getAngle(){
+        return m_integratedSteerEncoder.getPosition();
     }
+  
 
     public Rotation2d getAbsoluteAngle(){ 
-        return Rotation2d.fromDegrees(m_integratedSteerEncoder.getPosition());
+        return Rotation2d.fromRadians(m_integratedSteerEncoder.getPosition());
     }
 
     public double getDriveVelocity(){
@@ -234,14 +237,15 @@ public class SwerveModule {
 
        //Set desired state (based on utilizing the SparkMAX PID Controllers)
     public void setDesiredState(SwerveModuleState desiredState, boolean isOpenLoop, boolean steerInPlace){
+        desiredState.angle = desiredState.angle.plus(angularOffset);
         desiredState = optimize(desiredState, getState().angle);
         // m_driveMotor.set(desiredState.speedMetersPerSecond / kPhysicalMaxSpeedMetersPerSecond);
 
-        System.out.println(desiredState.angle.getRadians());
+        // System.out.println(desiredState.angle.getRadians());
         
         // m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkBase.ControlType.kVelocity);
         // m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkBase.ControlType.kVelocity);
-        m_drivePIDController.setReference(0, CANSparkBase.ControlType.kVelocity);
+        m_drivePIDController.setReference(desiredState.speedMetersPerSecond, CANSparkBase.ControlType.kVelocity);
         m_steerPIDController.setReference(desiredState.angle.getRadians(), CANSparkMax.ControlType.kPosition);
 
     }

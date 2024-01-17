@@ -12,8 +12,8 @@ public class RobotContainer {
     public RobotContainer(){
     m_swerve.setDefaultCommand(
       m_swerve.teleopDrive(
-        () -> m_driverController.getLeftY(),
-        () -> m_driverController.getLeftX(),
+        () -> -m_driverController.getLeftY(),
+        () -> -m_driverController.getLeftX(),
         () -> -m_driverController.getRightX(),
         () -> false,
         () -> true

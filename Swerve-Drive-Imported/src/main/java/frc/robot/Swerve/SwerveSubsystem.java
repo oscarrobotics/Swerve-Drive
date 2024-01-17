@@ -1,7 +1,10 @@
 package frc.robot.Swerve;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
 import java.util.function.BooleanSupplier;
 import java.util.function.DoubleSupplier;
+import java.util.stream.Collector;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.Pigeon2;
@@ -25,7 +28,6 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import edu.wpi.first.wpilibj2.command.Command;
 import edu.wpi.first.wpilibj2.command.SubsystemBase;
 import frc.robot.Constants;
-import frc.robot.Constants.SwerveKinematics;
 
 public class SwerveSubsystem extends SubsystemBase{
 
@@ -36,26 +38,43 @@ public class SwerveSubsystem extends SubsystemBase{
     private Field2d m_field;
     public Matrix<N3,N1> stateStdDevs = VecBuilder.fill(0.1,0.1,0.1);
 
-    public final SwerveModule flModule = new SwerveModule("Front Left", 0, SwerveConstants.Mod0.constants);
-    public final SwerveModule frModule = new SwerveModule("Front Right", 1, SwerveConstants.Mod1.constants);
-    public final SwerveModule rlModule = new SwerveModule("Rear Left", 2, SwerveConstants.Mod2.constants);
-    public final SwerveModule rrModule = new SwerveModule("Rear Right", 3,  SwerveConstants.Mod3.constants);
+    // public final SwerveModule flModule = new SwerveModule("Front Left", 1, SwerveConstants.Mod1.constants);
+    // public final SwerveModule frModule = new SwerveModule("Front Right", 3, SwerveConstants.Mod3.constants);
+    // public final SwerveModule rlModule = new SwerveModule("Rear Left", 0, SwerveConstants.Mod0.constants);
+    // public final SwerveModule rrModule = new SwerveModule("Rear Right", 2,  SwerveConstants.Mod2.constants);
     // public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(m_kinematics, m_gyro.getYaw(), getModulePositions(), new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(0)), stateStdDevs);
 
     private final SwerveModule[] m_modules = new SwerveModule[]{
-            flModule, frModule, rlModule, rrModule
+            // flModule, frModule, rlModule, rrModule
+            // rlModule, flModule, rrModule, frModule
+            new SwerveModule("Rear Left", 0, SwerveConstants.Mod0.constants),
+            new SwerveModule("Front Left", 1, SwerveConstants.Mod1.constants),
+            new SwerveModule("Rear Right", 2,  SwerveConstants.Mod2.constants),
+            new SwerveModule("Front Right", 3, SwerveConstants.Mod3.constants),
     };
 
+    
+    private SwerveDriveKinematics m_Kinematics;
+     
+    
 
     public SwerveSubsystem(){
 
+        
         m_field = new Field2d();
+        m_Kinematics = new SwerveDriveKinematics(
+            Arrays.stream(m_modules).map(mod -> mod.positionalOffset).toArray(Translation2d[]::new)
+        );
+
+
+        
         SmartDashboard.putData("Field", m_field);
 
         var pigeon2YawSignal = m_gyro.getYaw();
     }
 
     public void drive(double vxMeters, double vyMeters, double omegaRadians, boolean fieldRelative, boolean isOpenLoop){
+ 
         ChassisSpeeds targetChassisSpeeds = fieldRelative
             ? ChassisSpeeds.fromFieldRelativeSpeeds(vxMeters, vyMeters, omegaRadians, getHeading())
             : new ChassisSpeeds(vxMeters, vyMeters, omegaRadians);
@@ -64,7 +83,7 @@ public class SwerveSubsystem extends SubsystemBase{
     }
 
     public void setChassisSpeeds(ChassisSpeeds targetChassisSpeeds, boolean openLoop, boolean steerInPlace){
-        setModuleStates(Constants.SwerveKinematics.kKinematics.toSwerveModuleStates(targetChassisSpeeds), openLoop, steerInPlace);
+        setModuleStates(m_Kinematics.toSwerveModuleStates(targetChassisSpeeds), openLoop, steerInPlace);
     }
 
     public SwerveModuleState[] getModuleStates() {
@@ -88,6 +107,7 @@ public class SwerveSubsystem extends SubsystemBase{
 
         for (SwerveModule mod : m_modules){
             mod.setDesiredState(desiredStates[mod.moduleNumber], isOpenLoop, steerInPlace);
+            SmartDashboard.putNumber(mod.moduleName+"requested Angle", desiredStates[mod.moduleNumber].angle.getRadians());
         }
     }
 
@@ -131,7 +151,9 @@ public class SwerveSubsystem extends SubsystemBase{
         for(SwerveModule mod : m_modules){
             // SmartDashboard.putNumber(mod.moduleName + "Desired Angle", mod.getAbsoluteAngle().getRadians());
             // SmartDashboard.putNumber(mod.moduleName +"Desired Velocity", mod.getDriveVelocity());
-            SmartDashboard.putNumber(mod.moduleName +"Angle", mod.getAbsoluteAngle().getRadians());
+            
+            SmartDashboard.putNumber(mod.moduleName +"Angle", mod.getAngle());
+            
         }
     }
 }
