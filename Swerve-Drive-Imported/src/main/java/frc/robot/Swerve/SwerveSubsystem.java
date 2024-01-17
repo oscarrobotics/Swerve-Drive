@@ -63,6 +63,7 @@ public class SwerveSubsystem extends SubsystemBase{
         
         m_field = new Field2d();
         m_Kinematics = new SwerveDriveKinematics(
+            //garentees the order of positional offsets is the order of m_modulesu 
             Arrays.stream(m_modules).map(mod -> mod.positionalOffset).toArray(Translation2d[]::new)
         );
 
