@@ -8,6 +8,7 @@ import java.util.stream.Collector;
 
 import com.ctre.phoenix6.StatusSignal;
 import com.ctre.phoenix6.hardware.Pigeon2;
+import com.ctre.phoenix6.mechanisms.swerve.SwerveDrivetrain.SwerveDriveState;
 
 import edu.wpi.first.math.MathUtil;
 import edu.wpi.first.math.Matrix;
@@ -33,40 +34,37 @@ public class SwerveSubsystem extends SubsystemBase{
 
     private final Pigeon2 m_gyro = new Pigeon2(0);
 
-    private SwerveDriveOdometry swerveOdometry;
-
+    // private SwerveDriveOdometry swerveOdometry;
+    private SwerveDriveKinematics m_kinematics;
+    // private SwerveDriveState m_state;
     private Field2d m_field;
-    public Matrix<N3,N1> stateStdDevs = VecBuilder.fill(0.1,0.1,0.1);
+    public Matrix<N3,N1> stateStdDevs = VecBuilder.fill(0.1,0.1,0.1); //values uncertain
+    public Matrix<N3,N1> visionMeasurementStdDevs = VecBuilder.fill(0.9,0.9,0.9); //values uncertain
 
-    // public final SwerveModule flModule = new SwerveModule("Front Left", 1, SwerveConstants.Mod1.constants);
-    // public final SwerveModule frModule = new SwerveModule("Front Right", 3, SwerveConstants.Mod3.constants);
-    // public final SwerveModule rlModule = new SwerveModule("Rear Left", 0, SwerveConstants.Mod0.constants);
-    // public final SwerveModule rrModule = new SwerveModule("Rear Right", 2,  SwerveConstants.Mod2.constants);
-    // public final SwerveDrivePoseEstimator poseEstimator = new SwerveDrivePoseEstimator(m_kinematics, m_gyro.getYaw(), getModulePositions(), new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(0)), stateStdDevs);
+    public final SwerveDrivePoseEstimator m_poseEstimator = new SwerveDrivePoseEstimator(
+                    m_kinematics, 
+                    new Rotation2d(), 
+                    getModulePositions(),
+                    new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(0)), 
+                    stateStdDevs,
+                    visionMeasurementStdDevs);
 
     private final SwerveModule[] m_modules = new SwerveModule[]{
-            // flModule, frModule, rlModule, rrModule
-            // rlModule, flModule, rrModule, frModule
             new SwerveModule("Rear Left", 0, SwerveConstants.Mod0.constants),
             new SwerveModule("Front Left", 1, SwerveConstants.Mod1.constants),
             new SwerveModule("Rear Right", 2,  SwerveConstants.Mod2.constants),
             new SwerveModule("Front Right", 3, SwerveConstants.Mod3.constants),
     };
 
-    
-    private SwerveDriveKinematics m_Kinematics;
-     
-    
-
     public SwerveSubsystem(){
 
         
         m_field = new Field2d();
-        m_Kinematics = new SwerveDriveKinematics(
+        m_kinematics = new SwerveDriveKinematics(
             //garentees the order of positional offsets is the order of m_modulesu 
             Arrays.stream(m_modules).map(mod -> mod.positionalOffset).toArray(Translation2d[]::new)
         );
-
+        
 
         
         SmartDashboard.putData("Field", m_field);
@@ -84,7 +82,7 @@ public class SwerveSubsystem extends SubsystemBase{
     }
 
     public void setChassisSpeeds(ChassisSpeeds targetChassisSpeeds, boolean openLoop, boolean steerInPlace){
-        setModuleStates(m_Kinematics.toSwerveModuleStates(targetChassisSpeeds), openLoop, steerInPlace);
+        setModuleStates(m_kinematics.toSwerveModuleStates(targetChassisSpeeds), openLoop, steerInPlace);
     }
 
     public SwerveModuleState[] getModuleStates() {
@@ -113,7 +111,7 @@ public class SwerveSubsystem extends SubsystemBase{
     }
 
     public Rotation2d getHeading(){
-        return Rotation2d.fromDegrees(getGyroYaw().getValueAsDouble());
+        return m_poseEstimator.getEstimatedPosition().getRotation();
     }
 
     private StatusSignal<Double> getGyroYaw(){
@@ -121,7 +119,7 @@ public class SwerveSubsystem extends SubsystemBase{
     }
 
     public Command teleopDrive(
-            DoubleSupplier translation, DoubleSupplier rotation, DoubleSupplier strafe,
+            DoubleSupplier translation, DoubleSupplier strafe, DoubleSupplier rotation,
             BooleanSupplier fieldRelative, BooleanSupplier openLoop){
         return run(() -> {
             double translationVal = MathUtil.applyDeadband(translation.getAsDouble(), Constants.swerveDeadband);
@@ -141,14 +139,18 @@ public class SwerveSubsystem extends SubsystemBase{
         }).withName("Teleop Drive");
     }
 
-    //Controller --> Chassispeeds --> Swerve Module State [x4]
-    //Odometry
-    //Field-based orientation
-    //Drive command
+    public void resetOdometry(){
+
+    }
+
+    public void updateOdometry(){
+        m_poseEstimator.update(m_gyro.getRotation2d(), getModulePositions());
+        
+    }
 
     @Override
     public void periodic(){
-        // m_swerve.updateOdometry();
+        updateOdometry();
         for(SwerveModule mod : m_modules){
             // SmartDashboard.putNumber(mod.moduleName + "Desired Angle", mod.getAbsoluteAngle().getRadians());
             // SmartDashboard.putNumber(mod.moduleName +"Desired Velocity", mod.getDriveVelocity());
