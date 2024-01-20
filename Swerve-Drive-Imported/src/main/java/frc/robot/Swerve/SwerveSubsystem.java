@@ -32,7 +32,7 @@ import frc.robot.Constants;
 
 public class SwerveSubsystem extends SubsystemBase{
 
-    private final Pigeon2 m_gyro = new Pigeon2(0);
+    private final Pigeon2 m_gyro = new Pigeon2(25);
 
     // private SwerveDriveOdometry swerveOdometry;
     private SwerveDriveKinematics m_kinematics;
@@ -41,13 +41,7 @@ public class SwerveSubsystem extends SubsystemBase{
     public Matrix<N3,N1> stateStdDevs = VecBuilder.fill(0.1,0.1,0.1); //values uncertain
     public Matrix<N3,N1> visionMeasurementStdDevs = VecBuilder.fill(0.9,0.9,0.9); //values uncertain
 
-    public final SwerveDrivePoseEstimator m_poseEstimator = new SwerveDrivePoseEstimator(
-                    m_kinematics, 
-                    new Rotation2d(), 
-                    getModulePositions(),
-                    new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(0)), 
-                    stateStdDevs,
-                    visionMeasurementStdDevs);
+
 
     private final SwerveModule[] m_modules = new SwerveModule[]{
             new SwerveModule("Rear Left", 0, SwerveConstants.Mod0.constants),
@@ -55,6 +49,9 @@ public class SwerveSubsystem extends SubsystemBase{
             new SwerveModule("Rear Right", 2,  SwerveConstants.Mod2.constants),
             new SwerveModule("Front Right", 3, SwerveConstants.Mod3.constants),
     };
+    public SwerveDrivePoseEstimator m_poseEstimator ;
+
+
 
     public SwerveSubsystem(){
 
@@ -64,8 +61,13 @@ public class SwerveSubsystem extends SubsystemBase{
             //garentees the order of positional offsets is the order of m_modulesu 
             Arrays.stream(m_modules).map(mod -> mod.positionalOffset).toArray(Translation2d[]::new)
         );
-        
-
+        m_poseEstimator = new SwerveDrivePoseEstimator(
+                    m_kinematics, 
+                    new Rotation2d(), 
+                    getModulePositions(),
+                    new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(0)), 
+                    stateStdDevs,
+                    visionMeasurementStdDevs);
         
         SmartDashboard.putData("Field", m_field);
 
