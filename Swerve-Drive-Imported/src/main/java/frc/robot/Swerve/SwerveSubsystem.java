@@ -63,9 +63,9 @@ public class SwerveSubsystem extends SubsystemBase{
         );
         m_poseEstimator = new SwerveDrivePoseEstimator(
                     m_kinematics, 
-                    new Rotation2d(), 
+                    Rotation2d.fromDegrees(m_gyro.getAngle()) , 
                     getModulePositions(),
-                    new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(0)), 
+                    new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(180)), 
                     stateStdDevs,
                     visionMeasurementStdDevs);
         
@@ -142,7 +142,10 @@ public class SwerveSubsystem extends SubsystemBase{
     }
 
     public void resetOdometry(){
-        m_poseEstimator.resetPosition(new Rotation2d(), getModulePositions(), null);
+        m_poseEstimator.resetPosition(Rotation2d.fromDegrees(m_gyro.getAngle()), 
+        getModulePositions(), 
+        new Pose2d(new Translation2d(0,0), 
+        Rotation2d.fromDegrees(180)));
 
     }
 

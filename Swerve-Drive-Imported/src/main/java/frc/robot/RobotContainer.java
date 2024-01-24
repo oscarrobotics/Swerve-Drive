@@ -20,7 +20,7 @@ public class RobotContainer {
         () -> true
       )
     );
-    m_driverController.    
+    m_driverController.a().onTrue(new InstantCommand(() -> m_swerve.resetOdometry(), m_swerve) );
     }
 
 }
