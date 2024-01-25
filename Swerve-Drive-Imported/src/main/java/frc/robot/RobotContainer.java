@@ -15,12 +15,22 @@ public class RobotContainer {
       m_swerve.teleopDrive(
         () -> m_driverController.getLeftY(),
         () -> m_driverController.getLeftX(),
-        () -> -m_driverController.getRightX(),
+        () -> m_driverController.getRightX(),
         () -> true,
         () -> true
       )
     );
     m_driverController.a().onTrue(new InstantCommand(() -> m_swerve.resetOdometry(), m_swerve) );
+    m_driverController.b().whileTrue(
+      m_swerve.evasiveDrive(
+        () -> m_driverController.getLeftY(),
+        () -> m_driverController.getLeftX(),
+        () -> m_driverController.getRightX(),
+        () -> true,
+        () -> true
+      )
+      
+    );
     }
 
 }
