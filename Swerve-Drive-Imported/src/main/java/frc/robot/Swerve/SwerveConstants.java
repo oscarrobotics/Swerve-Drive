@@ -36,7 +36,7 @@ public class SwerveConstants {
         public static final int steerCANId = 6;
         public static final Rotation2d angularOffset = Rotation2d.fromDegrees(270.0);
         public static final Translation2d positionalOffset = new Translation2d(-0.5969/2,-0.5969/2);
-        public static final boolean isReversed = true;
+        public static final boolean isReversed = false;
         public static final SwerveModuleConstants constants = new SwerveModuleConstants(moduleName, driveCANId, steerCANId, angularOffset, positionalOffset, isReversed);
     }
     

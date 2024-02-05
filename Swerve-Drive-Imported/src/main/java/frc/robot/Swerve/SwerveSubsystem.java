@@ -63,9 +63,9 @@ public class SwerveSubsystem extends SubsystemBase{
         );
         m_poseEstimator = new SwerveDrivePoseEstimator(
                     m_kinematics, 
-                    new Rotation2d(), 
+                    Rotation2d.fromDegrees(m_gyro.getAngle()) , 
                     getModulePositions(),
-                    new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(0)), 
+                    new Pose2d(new Translation2d(0,0), Rotation2d.fromDegrees(180)), 
                     stateStdDevs,
                     visionMeasurementStdDevs);
         
@@ -82,9 +82,20 @@ public class SwerveSubsystem extends SubsystemBase{
 
         setChassisSpeeds(targetChassisSpeeds, isOpenLoop, false);
     }
+    public void drive(double vxMeters, double vyMeters, double omegaRadians, boolean fieldRelative, boolean isOpenLoop, Translation2d turnCenter){
+ 
+        ChassisSpeeds targetChassisSpeeds = fieldRelative
+            ? ChassisSpeeds.fromFieldRelativeSpeeds(vxMeters, vyMeters, omegaRadians, getHeading())
+            : new ChassisSpeeds(vxMeters, vyMeters, omegaRadians);
+
+        setChassisSpeeds(targetChassisSpeeds, isOpenLoop, false, turnCenter);
+    }
 
     public void setChassisSpeeds(ChassisSpeeds targetChassisSpeeds, boolean openLoop, boolean steerInPlace){
         setModuleStates(m_kinematics.toSwerveModuleStates(targetChassisSpeeds), openLoop, steerInPlace);
+    }
+    public void setChassisSpeeds(ChassisSpeeds targetChassisSpeeds, boolean openLoop, boolean steerInPlace, Translation2d turnCenter){
+        setModuleStates(m_kinematics.toSwerveModuleStates(targetChassisSpeeds, turnCenter), openLoop, steerInPlace);
     }
 
     public SwerveModuleState[] getModuleStates() {
@@ -140,9 +151,43 @@ public class SwerveSubsystem extends SubsystemBase{
             drive(translationVal, strafeVal, rotationVal, fieldRelative.getAsBoolean(), isOpenLoop);
         }).withName("Teleop Drive");
     }
+    public Command evasiveDrive(
+            DoubleSupplier translation, DoubleSupplier strafe, DoubleSupplier rotation,
+            BooleanSupplier fieldRelative, BooleanSupplier openLoop){
+        return run(() -> {
+            double translationVal = MathUtil.applyDeadband(translation.getAsDouble(), Constants.swerveDeadband);
+            double strafeVal = MathUtil.applyDeadband(strafe.getAsDouble(), Constants.swerveDeadband);
+            double rotationVal = MathUtil.applyDeadband(rotation.getAsDouble(), Constants.swerveDeadband);
+
+            //calculate evasive center
+            //max turninc center = over modual
+            //turning center = strafe vector * 23in
+            // Translation2d turningCenter = new Translation2d(translationVal*0.5969/2,strafeVal*0.5969/2);
+            Translation2d turningCenter = new Translation2d(translationVal*0.5969*2,strafeVal*0.5969*2);
+            
+            
+            boolean isOpenLoop = openLoop.getAsBoolean();
+
+            translationVal *= Constants.kPhysicalMaxSpeedMetersPerSecond;
+
+            strafeVal *= Constants.kPhysicalMaxSpeedMetersPerSecond;
+
+            rotationVal *= Constants.kMaxRotSpeedRadPerSecond;
+
+            //calculate evasive center
+            //max turninc center = over modual
+            
+
+
+            drive(translationVal, strafeVal, rotationVal, fieldRelative.getAsBoolean(), isOpenLoop, turningCenter);
+        }).withName("Evasive Drive");
+    }
 
     public void resetOdometry(){
-        m_poseEstimator.resetPosition(new Rotation2d(), getModulePositions(), null);
+        m_poseEstimator.resetPosition(Rotation2d.fromDegrees(m_gyro.getAngle()), 
+        getModulePositions(), 
+        new Pose2d(new Translation2d(0,0), 
+        Rotation2d.fromDegrees(180)));
 
     }
 
